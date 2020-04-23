@@ -86,8 +86,10 @@ body {
   }
 
   .tab {
-    margin-left: 20px;
+   
     cursor: pointer;
+    display: inline-block;
+    margin: 5px;
   }
 
   .activeTab {
@@ -107,4 +109,12 @@ body {
     width: 20px;
     margin: 0 auto;
     margin-left: 5px;
+  }
+
+  .product-tab {
+    margin-top: 20px;
+  }
+
+ .product-tab > span:nth-child(1) {
+    margin-left: 0;
   }

@@ -1,68 +1,51 @@
+var eventBus = new Vue()
+
 Vue.component('product', {
-    props: {
-        premium:{
-            type: Boolean,
-            required: true
-        }
-    },
     template:   
     `<div class="product">
         <div class="product-image">
             <img :src="image" :alt="altText"/>
-        
         </div>
 
         <div class="product-info">
-        <!-- <h1>{{ brand }} {{ product }}</h1> or -->
-        <h1>{{ title }}</h1>
-            <!-- <p>{{ description }}</p> (CHALLENGE no.1)-->
-            <!-- <a :href="link" target="_blank">VUE</a> (CHALLENGE no.2) -->
-        <p v-if="inStock > 0">In Stock ({{inStock}})</p>
-        <p v-else :class="{lineThrough: inStock <= 0}">Out of Stock</p> <!-- challenge no.6 put a line through on OUT of STOCK-->
-        <p> Shipping: {{ shipping }}</p>
-        <!--  <p v-else-if="inventory <=10 && inventory > 0">Almost out of Stock</p>
-        <span v-if="onSale">On Sale!</span> Challenge no.3 v-if directive remove the element to the DOM you can use an alternative directive called v-show which only toggles the display of an element-->
-        
-        <product-details :details="details"></product-details>
-        
-        <!-- <ul>
-            <li v-for="detail in details">{{ detail }}</li>
-             <li v-for="size in sizes">{{ size }}</li> challenge no.4 
-         </ul> -->
+            <!-- <h1>{{ brand }} {{ product }}</h1> or -->
+            <h1>{{ title }}</h1>
+                <!-- <p>{{ description }}</p> (CHALLENGE no.1)-->
+                <!-- <a :href="link" target="_blank">VUE</a> (CHALLENGE no.2) -->
+            <p v-if="inStock > 0">In Stock ({{inStock}})</p>
+            <p v-else :class="{lineThrough: inStock <= 0}">Out of Stock</p> <!-- challenge no.6 put a line through on OUT of STOCK-->
+     
+            <!--  <p v-else-if="inventory <=10 && inventory > 0">Almost out of Stock</p>
+            <span v-if="onSale">On Sale!</span> Challenge no.3 v-if directive remove the element to the DOM you can use an alternative directive called v-show which only toggles the display of an element-->
+            
+   
+            
+            <!-- <ul>
+                <li v-for="detail in details">{{ detail }}</li>
+                <li v-for="size in sizes">{{ size }}</li> challenge no.4 
+            </ul> -->
 
-        <div class="flex">
-            <div v-for="(variant, index) in variants" 
-            :key="variant.variantId"
-            class="color-box"
-            :style="{backgroundColor: variant.variantColor}"
-            @mouseover="updateProduct(index)">
-            <!-- <p @mouseover="updateProduct(variant.variantImage)">{{ variant.variantColor }}</p> -->
+            <div class="flex">
+                <div v-for="(variant, index) in variants" 
+                :key="variant.variantId"
+                class="color-box"
+                :style="{backgroundColor: variant.variantColor}"
+                @mouseover="updateProduct(index)">
+                <!-- <p @mouseover="updateProduct(variant.variantImage)">{{ variant.variantColor }}</p> -->
+                </div>
             </div>
-        </div>
 
-        <button v-on:click="addToCart" 
-                :disabled="inStock <= 0"
-                :class="{disabledButton: inStock <= 0}">
-                Add to Cart</button>
-        <button @click="rmvFrmCart"  
-                :disabled=" outOfStock == 0"
-                :class="{disabledButton: outOfStock == 0}">
-                Remove from Cart</button> <!--  Challenge no.5 -->
-        <div>
-            <h2>Reviews</h2>
-            <p v-if="!reviews.length">There is no reviews yet.</p>
-            <ul>
-                <li v-for="review in reviews">
-                <p>Name: {{ review.name }}</p>
-                <p>Rating: {{ review.rating }}</p>
-                <p>Feedback: {{ review.review }}</p>
-                <p>Recommendation: {{ review.recommendation }}</p>
+            <button v-on:click="addToCart" 
+                    :disabled="inStock <= 0"
+                    :class="{disabledButton: inStock <= 0}">
+                    Add to Cart</button>
+            <button @click="rmvFrmCart"  
+                    :disabled=" outOfStock == 0"
+                    :class="{disabledButton: outOfStock == 0}">
+                    Remove from Cart</button> <!--  Challenge no.5 -->
+            
+            <product-tabs :reviews="reviews" :details="details"></product-tabs>
 
-                </li>
-            </ul>
-        </div>
-
-        <product-review @review-submitted="addReview"></product-review>
         </div>
     </div>`,
 data() {
@@ -114,9 +97,6 @@ methods:  {
     },
     updateProduct: function (index){
         this.selectedVariant = index;
-    },
-    addReview (productReview) {
-        this.reviews.push(productReview)
     }
 },
 computed: {
@@ -135,25 +115,18 @@ computed: {
     },
     outOfStock() {
         return  this.variants[this.selectedVariant].onCart;
-    },
-    shipping() {
-        if (this.premium) {
-            return "Free"
-        } else {
-            return "$"+2.99
-        }
     }
-}
+
+ },
+ mounted() {
+     eventBus.$on('review-submitted', productReview => {
+        this.reviews.push(productReview)  
+     })
+ }
 
 })
 
 Vue.component('product-details', {
-    props: {
-      details: {
-        type: Array,
-        required: true
-      }
-    },
     template: `
     <div>
         <h4>Product Details</h4>
@@ -228,7 +201,7 @@ Vue.component('product-review', {
                 rating: this.rating,
                 recommendation: this.recommendation
             }
-            this.$emit('review-submitted', productReview)
+            eventBus.$emit('review-submitted', productReview)
             this.name = null
             this.review = null
             this.rating = null
@@ -244,7 +217,76 @@ Vue.component('product-review', {
     }
 })
 
-Vue.config.devtools = true
+Vue.component ('product-tabs', {
+    props: {
+        reviews: {
+            type: Array,
+            required: true
+        },
+        premium:{
+            type: Boolean,
+            required: true
+        },
+        details: {
+            type: Array,
+            required: true
+        }
+ 
+    },
+    template: `
+    <div class="product-tab">
+        <span class="tab"
+              :class="{activeTab : selectedTabs === tab}" 
+              v-for="(tab,index) in tabs" 
+              :key="index"
+              @click="selectedTabs = tab"
+              >{{ tab }}</span>
+
+        
+        <div v-show="selectedTabs === 'Reviews'">
+            <p v-if="!reviews.length">There is no reviews yet.</p>
+            <ul v-else>
+                <li v-for="(review, index) in reviews" :key-index="index">
+                    <p>Name: {{ review.name }}</p>
+                    <p>Rating: {{ review.rating }}</p>
+                    <p>Feedback: {{ review.review }}</p>
+                    <p>Recommendation: {{ review.recommendation }}</p>
+                </li>
+            </ul>
+        </div>
+  
+        <product-review v-show="selectedTabs === 'Make a Review'"></product-review>
+
+        <p v-show="selectedTabs === 'Shipping'"> Shipping: {{ shipping }}</p>
+        
+        <div v-show="selectedTabs === 'Details'">
+            <h4>Product Details</h4>
+            <ul>
+                <li v-for="detail in details">{{ detail }}</li>
+            </ul>
+        </div>
+                        
+    </div>
+    `,
+    data () {
+        return {
+            tabs: ["Reviews", "Make a Review", "Shipping","Details"],
+            selectedTabs: 'Reviews'
+        }
+    },
+    computed: {
+        shipping() {
+            if (this.premium) {
+                return "Free"
+            } else {
+                return "$"+2.99
+            }
+        }
+    }
+
+})
+
+Vue.config.devtools = true // MAKES vue js dev tools visible 
 
 var app = new Vue ({
     el: '#app',
